@@ -1,6 +1,4 @@
 ############################################################################
-### Written by Gaojie Jin and updated by Xiaowei Huang, 2021
-###
 ### For a 2-nd year undergraduate student competition on
 ### the robustness of deep neural networks, where a student
 ### needs to develop
@@ -60,9 +58,6 @@ device = torch.device("cpu")
 torch.manual_seed(args.seed)
 kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
 
-############################################################################
-################    don't change the below code    #####################
-############################################################################
 train_set = torchvision.datasets.FashionMNIST(root='data', train=True, download=True,
                                               transform=transforms.Compose([transforms.ToTensor()]))
 train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True)
@@ -90,17 +85,9 @@ class Net(nn.Module):
         x = self.fc4(x)
         output = F.log_softmax(x, dim=1)
         return output
-
-
-##############################################################################
-#############    end of "don't change the below code"   ######################
-##############################################################################
 # generate adversarial data, you can define your adversarial method
 def adv_attack(model, X, y, device):
     X_adv = Variable(X.data)
-    ################################################################################################
-    ## Note: below is the place you need to edit to implement your own attack algorithm
-    ################################################################################################
     # generate adversarial data using fgsm
     # random_noise = torch.FloatTensor(*X_adv.shape).uniform_(-0.1, 0.1).to(device)
     # X_adv = Variable(X_adv.data + random_noise)
@@ -125,10 +112,6 @@ def adv_attack(model, X, y, device):
             # delta = torch.clamp(X_adv.data - X.data, min=-eps, max=eps)
             delta = torch.clamp(X_adv - origin, min=-eps, max=eps)
             X_adv = torch.clamp(origin + delta, min=0, max=1).detach_()
-    ################################################################################################
-    ## end of attack method
-    ################################################################################################
-
     return X_adv
 
 def fgsm_attack(model, X, y, device):
@@ -182,48 +165,6 @@ def f(outputs, labels):
     i, _ = torch.max((1 - one_hot_labels) * outputs, dim=1)  # get the second largest logit
     j = torch.masked_select(outputs, one_hot_labels.bool())  # get the largest logit
     return torch.clamp((i - j), min=-0.1099, max=0.1099)
-
-
-# train function, you can use adversarial training
-# def train(args, model, device, train_loader, optimizer, epoch):
-#     model.train()
-#     total_loss = 0
-#     scheduler_lr = optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
-#     t_total = len(train_loader) // args.gradient_accumulation_steps * args.epochs
-#     for batch_idx, (data, target) in enumerate(train_loader):
-#         data, target = data.to(device), target.to(device)
-#         data = data.view(data.size(0), 28 * 28)
-#
-#         # use adverserial data to train the defense model
-#         adv_data = adv_attack(model, data, target, device=device)
-#         adv_fgsm = fgsm_attack(model, data, target, device=device)
-#         adv_cw = cw_attack(model, data, target, device=device)
-#         # adv_data = 2*adv_data + 2*adv_cw + adv_fgsm
-#
-#         # clear gradients
-#         optimizer.zero_grad()
-#
-#         # compute loss
-#         loss1 = F.nll_loss(model(adv_data), target)
-#         loss2 = F.nll_loss(model(adv_fgsm), target)
-#         loss3 = F.nll_loss(model(adv_cw), target)
-#         loss_t = loss1+loss2+loss3
-#         # loss = F.nll_loss(model(data), target)
-#         # loss = criterion(output, target)
-#
-#         # get gradients and update
-#         # loss1.backward()
-#         # loss2.backward()
-#         # loss3.backward()
-#         loss_t.backward()
-#         # torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
-#
-#         # 更新参数
-#         optimizer.step()
-#         # 更新学习率
-#         # scheduler_lr.step()
-#
-#         # optimizer.step()
 
 def train(args, model, device, train_loader, optimizer, epoch, scheduler):
     # global random_noise
@@ -330,13 +271,6 @@ def eval_adv_test(model, device, test_loader):
 # main function, train the dataset and print train loss, test loss for each epoch
 def train_model():
     model = Net().to(device)
-
-    ################################################################################################
-    ## Note: below is the place you need to edit to implement your own training algorithm
-    ##       You can also edit the functions such as train(...).
-    ################################################################################################
-
-
     # optimizer = optim.SGD(model.parameters(), lr=1e-3)
     # optimizer = optim.SGD(model.parameters(), lr=args.lr)
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
@@ -361,10 +295,6 @@ def train_model():
         1 / adv_tstacc))
     print('Your estimated defence ability, by evaluating your own defence model over your attack, is: {:.4f}'.format(
         adv_tstacc))
-    ################################################################################################
-    ## end of training method
-    ################################################################################################
-
     # save the model
     torch.save(model.state_dict(), str(id_) + '.pt')
     return model
